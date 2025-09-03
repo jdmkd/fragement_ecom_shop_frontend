@@ -1,85 +1,165 @@
-import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Search, ShoppingCart, User, Menu, X, Heart } from "lucide-react";
+import { useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, Search, Heart, ShoppingCart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/context/AuthContext";
 
-import profileUserIcon from '../assets/images/profileicons/profile-user.png'
-import AccountIcon from "../assets/images/profileicons/account.png"
-import logOutIcon from '../assets/images/profileicons/log-out.png'
-import settingsIcon from '../assets/images/profileicons/settings.png'
-import { useAuth } from '../context/AuthContext';
+const navItems = [
+  { name: "Home", path: "/" },
+  { name: "About", path: "/about" },
+  { name: "Services", path: "/services" },
+  { name: "Products", path: "/products" },
+  { name: "Contact", path: "/contact" },
+];
 
 const Header = () => {
-  const [menuActive, setMenuActive] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const location = useLocation();
-  const { user, isAuthenticated, logout, loading } = useAuth();
-
-  const navItems = [
-    { name: "Home", path: "/" },
-    { name: "Clothes", path: "/clothes" },
-    { name: "Shoes", path: "/shoes" },
-    { name: "Watches", path: "/watches" },
-    { name: "Belts", path: "/belts" },
-    { name: "Perfumes", path: "/perfumes" },
-    { name: "Shop", path: "/shop" },
-  ];
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
-  useEffect(() => {
-    const handleMenuToggle = () => {
-      setMenuActive(prev => !prev);
-    };
-
-    const menuActiveElement = document.querySelector('menu-btn');
-
-    if (menuActiveElement) {
-      menuActiveElement.addEventListener('click', handleMenuToggle);
-    }
-
-    return () => {
-        if (menuActiveElement) {
-          menuActiveElement.removeEventListener('click', handleMenuToggle);
-        }
-    };
-}, []);
-
-  const handleLogout = () => {
-    logout();
-  };
-
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
-      <div className="container-responsive">
-        <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-primary to-accent rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">F</span>
-            </div>
-            <span className="font-bold text-xl gradient-text">Fragement</span>
-          </Link>
+    <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl shadow-md border-b border-border transition-all">
+      <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-20">
+  {/* Logo */}
+  <Link to="/" className="flex items-center space-x-2">
+    <div className="w-12 h-12 bg-gradient-to-r from-primary to-accent rounded-xl flex items-center justify-center shadow-lg">
+      <span className="text-white font-bold text-2xl">F</span>
+    </div>
+    <span className="font-semibold text-2xl tracking-wide text-gray-900">
+      Fragement
+    </span>
+  </Link>
 
-          <nav className="hidden lg:flex items-center space-x-6">
+  {/* Navigation (Desktop) */}
+  <nav className="hidden lg:flex items-center space-x-8">
+    {navItems.map((item) => (
+      <Link
+        key={item.name}
+        to={item.path}
+        className={`text-base font-medium transition-all duration-200 px-2 py-1 rounded-lg hover:text-primary hover:bg-primary/10 ${
+          isActive(item.path)
+            ? "text-primary bg-primary/10"
+            : "text-muted-foreground"
+        }`}
+      >
+        {item.name}
+      </Link>
+    ))}
+  </nav>
+
+  {/* Right Side: Search, Profile, Auth */}
+  <div className="flex items-center space-x-3">
+    {/* Search field (desktop) */}
+    <div className="relative flex-1 min-w-[10px] max-w-xs">
+      <input
+        type="text"
+        placeholder="Search products..."
+        className="w-full pl-10 pr-4 py-2 text-sm rounded-xl border border-gray-200 bg-white/60 backdrop-blur-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
+      />
+      <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+    </div>
+
+    {/* Profile dropdown (always visible) */}
+    {user ? (
+      <div className="relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setProfileOpen(!profileOpen)}
+        >
+          <User className="h-7 w-7 text-muted-foreground hover:text-primary transition-colors" />
+        </Button>
+        {profileOpen && (
+          <div className="absolute right-0 mt-2 w-48 bg-white/90 backdrop-blur-lg rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
+            <div className="block px-4 py-2 text-sm text-gray-700 border-b-2">
+              Welcome, {user.username || user.email}
+            </div>
+            <Link
+              to="/accounts/myprofile"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary"
+              onClick={() => setProfileOpen(false)}
+            >
+              My Profile
+            </Link>
+            <Link
+              to="/accounts/orderhistory"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-primary/10 hover:text-primary"
+              onClick={() => setProfileOpen(false)}
+            >
+              My Orders
+            </Link>
+            <button
+              onClick={() => {
+                logout();
+                setProfileOpen(false);
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+            >
+              Logout
+            </button>
+          </div>
+        )}
+      </div>
+    ) : (
+      <>
+        <Button
+          onClick={() => navigate("/accounts/login")}
+          className="bg-primary text-white rounded-xl px-6 py-2 font-semibold shadow hover:bg-primary/90 transition-all text-base"
+        >
+          Sign In
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => navigate("/accounts/register")}
+          className="rounded-xl px-6 py-2 font-semibold border-primary text-primary hover:bg-primary/10 transition-all text-base"
+        >
+          Sign Up
+        </Button>
+      </>
+    )}
+
+    {/* Hamburger (Mobile) */}
+    <Button
+      variant="ghost"
+      size="icon"
+      className="lg:hidden"
+      onClick={() => setDrawerOpen(true)}
+    >
+      <Menu className="h-7 w-7 text-muted-foreground" />
+    </Button>
+  </div>
+</div>
+
+      {/* Mobile Fullscreen Drawer */}
+      {drawerOpen && (
+        <div className="fixed lg:hidden mt-0 right-0 top-0 z-50 bg-white/95 rounded-md ">
+          {/* Close Button at Top Right */}
+          <div className="flex items-center justify-between px-6 py-5 border-b">
+            <span className="font-bold text-xl text-primary">Menu</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDrawerOpen(false)}
+            >
+              <X className="h-6 w-6 text-muted-foreground" />
+            </Button>
+          </div>
+
+          {/* Nav Links */}
+          <nav className="flex flex-col px-6 py-6 space-y-3">
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 to={item.path}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
-                  isActive(item.path) 
-                    ? "text-primary border-b-2 border-primary" 
-                    : "text-muted-foreground"
+                onClick={() => setDrawerOpen(false)}
+                className={`text-lg font-medium px-4 py-3 rounded-lg transition-all ${
+                  isActive(item.path)
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-primary hover:bg-primary/10"
                 }`}
               >
                 {item.name}
@@ -87,118 +167,57 @@ const Header = () => {
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center flex-1 max-w-md mx-6">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
+          {/* Search bar */}
+          <div className="px-6 py-4">
+            <div className="relative mb-4">
+              <input
                 type="text"
                 placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 bg-muted/50 border-0 focus:bg-white"
+                className="w-full pl-10 pr-4 py-3 text-base rounded-xl border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-all"
               />
+              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon" className="hidden sm:flex">
-              <Heart className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 bg-secondary text-secondary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                3
-              </span>
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="hidden sm:flex">
-                  <img src={profileUserIcon} alt="User profile icon" height={20} width={20} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                {loading ? (
-                    <DropdownMenuLabel>Loading...</DropdownMenuLabel>
-                ) : isAuthenticated && user ? (
-                  <>
-                    <DropdownMenuLabel>Welcome: {user.username || user.email}</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem>
-                        <img src={profileUserIcon} height={20} width={20} alt="Profile icon" className="mr-2" />
-                        <Link to="/accounts/myprofile">My Profile</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleLogout}>
-                        <img src={logOutIcon} height={20} width={20} alt="Logout icon" className="mr-2" />
-                        <span>Logout</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <img src={settingsIcon} height={20} width={20} alt="Order history icon" className="mr-2" />
-                        <Link to="/accounts/orderhistory">Order History</Link>
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                  </>
-                ) : (
-                  <>
-                    <DropdownMenuLabel>My Profile</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <img src={AccountIcon} height={20} width={20} alt="Login icon" className="mr-2" />
-                      <Link to="/accounts/login">Login or Register</Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
-        </div>
-
-        <div className="md:hidden pb-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 bg-muted/50 border-0"
-            />
-          </div>
-        </div>
-      </div>
-
-      {isMenuOpen && (
-        <div className="lg:hidden border-t border-border bg-background">
-          <nav className="container-responsive py-4">
-            <div className="flex flex-col space-y-3">
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`text-sm font-medium py-2 px-3 rounded-md transition-colors ${
-                    isActive(item.path)
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:text-primary hover:bg-muted/50"
-                  }`}
+          {/* Auth buttons at bottom */}
+          <div className="flex flex-col px-6 py-6 space-y-4 border-t mt-auto">
+            {!user ? (
+              <>
+                <Button
+                  onClick={() => {
+                    navigate("/accounts/login");
+                    setDrawerOpen(false);
+                  }}
+                  className="bg-primary text-white rounded-xl px-6 py-3 font-semibold shadow hover:bg-primary/90 transition-all text-lg"
                 >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-          </nav>
+                  Sign In
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigate("/accounts/register");
+                    setDrawerOpen(false);
+                  }}
+                  className="rounded-xl px-6 py-3 font-semibold border-primary text-primary hover:bg-primary/10 transition-all text-lg"
+                >
+                  Sign Up
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={() => {
+                  logout();
+                  setDrawerOpen(false);
+                }}
+                className="bg-red-500 text-white rounded-xl px-6 py-3 font-semibold shadow hover:bg-red-600 transition-all text-lg"
+              >
+                Logout
+              </Button>
+            )}
+          </div>
         </div>
       )}
+
     </header>
   );
 };
