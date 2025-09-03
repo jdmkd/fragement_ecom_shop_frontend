@@ -114,9 +114,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error("Failed to fetch user data:", error);
-        if (axios.isAxiosError(error) && error.response?.status === 401) { /* empty */ } else {
-          logoutUser();
-        }
       } finally {
         setLoading(false);
       }

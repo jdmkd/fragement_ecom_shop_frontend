@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { showToast } from "../../lib/toast.tsx";
 import { useAuth } from '../../context/AuthContext';
+import { Eye, EyeOff } from "lucide-react"; // 👈 import icons
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ const Login = () => {
     password: "",
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // 👈 state for toggle
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -84,7 +86,7 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-4 w-full max-w-md mx-auto">
+    <div className="flex flex-col items-center justify-center p-4 w-full max-w-sm mx-auto">
       <h1 className="text-4xl font-bold mb-4 text-center">Login</h1>
       <p className="text-gray-600 dark:text-gray-400 mb-8 text-center">Sign in to your account</p>
       <form onSubmit={handleSubmit} className="space-y-6 w-full">
@@ -92,10 +94,29 @@ const Login = () => {
           <Label htmlFor="identifier" className="text-base">Username or Email</Label>
           <Input id="identifier" name="identifier" type="text" placeholder="Enter your username or email" value={identifier} onChange={handleChange} required className="p-3 text-base" />
         </div>
-        <div className="space-y-2">
+
+        {/* Password field with toggle */}
+        <div className="space-y-2 relative">
           <Label htmlFor="password" className="text-base">Password</Label>
-          <Input id="password" name="password" type="password" placeholder="********" value={password} onChange={handleChange} required className="p-3 text-base" />
+          <Input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="********"
+            value={password}
+            onChange={handleChange}
+            required
+            className="p-3 text-base pr-10"
+          />
+          <button
+            type="button"
+            className="absolute right-2 top-[35px] text-gray-500 hover:text-gray-700"
+            onClick={() => setShowPassword((prev) => !prev)}
+          >
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
         </div>
+
         <Link to="/accounts/request-reset-email" className="text-sm font-medium text-primary hover:underline self-end">
           Forgot password?
         </Link>
@@ -113,4 +134,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default Login;
