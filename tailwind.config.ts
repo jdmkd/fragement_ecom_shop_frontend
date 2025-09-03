@@ -82,6 +82,14 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			keyframes: {
+				'gradient-x': {
+					'0%, 100%': { 'background-position': '0% 50%' },
+					'50%': { 'background-position': '100% 50%' }
+				},
+				'spin-slow': {
+					'0%': { transform: 'rotate(0deg)' },
+					'100%': { transform: 'rotate(360deg)' }
+				},
 				'accordion-down': {
 					from: {
 						height: '0'
@@ -128,7 +136,10 @@ export default {
 				'slide-up': 'slide-up 0.6s ease-out',
 				'scale-in': 'scale-in 0.4s ease-out',
 				'bounce-in': 'bounce-in 0.6s ease-out',
-				'float': 'float 3s ease-in-out infinite'
+				'float': 'float 3s ease-in-out infinite',
+				'gradient-x': 'gradient-x 4s ease-in-out infinite',
+    		'spin-slow': 'spin-slow 12s linear infinite',
+    		'spin-slow': 'spin-slow 12s linear infinite',
 			}
 		}
 	},
