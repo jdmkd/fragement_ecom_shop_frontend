@@ -36,16 +36,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  /** Logout User */
   const logoutUser = useCallback(() => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('refreshToken');
-    localStorage.removeItem('unverifiedUserEmail');
     setAuthToken(null);
     setRefreshToken(null);
     setUser(null);
     navigate('/accounts/login');
     showToast({ type: "info", title: "Logged Out", description: "You have been logged out." });
-  }, [setAuthToken, setRefreshToken, setUser, navigate]);
+  }, [navigate]);
 
   const api = React.useMemo(() => {
     const instance = axios.create({
@@ -54,9 +54,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         'Content-Type': 'application/json',
       },
     });
-
-    instance.interceptors.request.use(
-      (config) => {
+    
+    /** Attach access token */
+    instance.interceptors.request.use( (config) => {
         const token = localStorage.getItem('authToken');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
@@ -66,6 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       (error) => Promise.reject(error)
     );
 
+    /** Handle token refresh on 401 */
     instance.interceptors.response.use(
       (response) => response,
       async (error) => {
@@ -73,17 +74,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (error.response.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
           try {
-            const currentRefreshToken = localStorage.getItem('refreshToken');
-            if (!currentRefreshToken) {
-              logoutUser();
-              return Promise.reject(error);
-            }
-            const response = await axios.post(`${baseURL}token/refresh/`, {
-              refresh: currentRefreshToken,
+            if (!refreshToken) throw new Error('No refresh token');
+
+            const response = await axios.post(`${baseURL}auth/token/refresh/`, {
+              refresh: refreshToken,
             });
+
             const newAccessToken = response.data.access;
+            const newRefreshToken = response.data.refresh || refreshToken;
+
             localStorage.setItem('authToken', newAccessToken);
+            localStorage.setItem('refreshToken', newRefreshToken);
+
             setAuthToken(newAccessToken);
+            setRefreshToken(newRefreshToken);
+
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
             return instance(originalRequest);
           } catch (refreshError) {
@@ -95,43 +100,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return Promise.reject(error);
       }
     );
-    return instance;
-  }, [setAuthToken, logoutUser]);
 
+    return instance;
+  }, [authToken, refreshToken, logoutUser]);
+
+
+  /** Fetch user info */
   const fetchUser = useCallback(async () => {
     setLoading(true);
-    if (authToken) {
-      try {
-        const response = await api.get("user/");
-
-        const userDataFromAPI = response.data.data;
-
-        if (userDataFromAPI && userDataFromAPI.username && userDataFromAPI.email) {
-          setUser(userDataFromAPI);
-        } else {
-          console.warn("User data from API is incomplete or invalid (expected in data.data):", response.data);
-          logoutUser();
-        }
-      } catch (error) {
-        console.error("Failed to fetch user data:", error);
-      } finally {
-        setLoading(false);
-      }
-    } else {
+    if (!authToken) {
       setUser(null);
+      setLoading(false);
+      return;
+    }
+    try {
+      const response = await api.get('auth/user/');
+      setUser(response.data.data);
+    } catch (err) {
+      console.error('Fetch user failed', err);
+      logoutUser();
+    } finally {
       setLoading(false);
     }
   }, [authToken, api, logoutUser]);
 
+
+  /** Automatic silent refresh */
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (!refreshToken) return;
+      try {
+        const res = await axios.post(`${baseURL}auth/token/refresh/`, { refresh: refreshToken });
+        const newAccessToken = res.data.access;
+        const newRefreshToken = res.data.refresh || refreshToken;
+        localStorage.setItem('authToken', newAccessToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+        setAuthToken(newAccessToken);
+        setRefreshToken(newRefreshToken);
+      } catch (err) {
+        logoutUser();
+      }
+    }, 14 * 60 * 1000); // refresh every 14 minutes (before access token expires)
+    return () => clearInterval(interval);
+  }, [refreshToken, logoutUser]);
+
+
+  /** Initialize */
   useEffect(() => {
     if (authToken) {
       fetchUser();
     } else {
-      setUser(null);
+      // setUser(null);
       setLoading(false);
     }
   }, [authToken, fetchUser]);
 
+  /** Login */
   const login = async (accessToken: string, newRefreshToken: string) => {
     localStorage.setItem('authToken', accessToken);
     localStorage.setItem('refreshToken', newRefreshToken);
@@ -148,10 +172,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+/** Hook to use AuthContext */
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+
   return context;
 }; 

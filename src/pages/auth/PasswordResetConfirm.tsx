@@ -46,7 +46,7 @@ const PasswordResetConfirm = () => {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}password-reset-confirm/${uidb64}/${token}/`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}auth/password-reset-confirm/${uidb64}/${token}/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

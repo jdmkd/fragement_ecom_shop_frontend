@@ -28,7 +28,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}login/`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}auth/login/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -58,19 +58,24 @@ const Login = () => {
           });
         }
       } else {
-        const errorMessage = data.detail || "Login failed. Please check your credentials.";
-        showToast({
-          type: "error",
-          title: "Login Failed",
-          description: errorMessage,
-        });
-        if (data.code === "account_not_verified") {
+        const errorMessage = data.message || "Login failed. Please check your credentials.";
+        console.log("Login error response data1:", data); // Debugging line
+        
+        if (data.special_code === "account_not_verified") {
           localStorage.setItem("unverifiedUserEmail", identifier);
+          console.log("Navigating to /accounts/verify-otp due to unverified account."); // Debugging line
           navigate("/accounts/verify-otp");
           showToast({
             type: "info",
             title: "Account Not Verified",
+            // description: data.message,
             description: "Your account is not verified. Please verify your email with the OTP.",
+          });
+        }else {
+          showToast({
+            type: "error",
+            title: "Login Failed",
+            description: data.message || "Login failed. Please check your credentials.",
           });
         }
       }

@@ -3,83 +3,104 @@ import { useNavigate } from "react-router-dom";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { showToast } from "../../lib/toast.tsx"; // Import the new showToast
+import { showToast } from "../../lib/toast.tsx";
 
 const VerifyOTP = () => {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null); // State to hold the email
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // ✅ Load email from localStorage at mount
   useEffect(() => {
-    const userEmail = localStorage.getItem("unverifiedUserEmail");
-    if (!userEmail) {
-      showToast({ title: "Error", description: "No email found for OTP verification. Please register or login again.", type: "error" });
+    const storedEmail = localStorage.getItem("unverifiedUserEmail");
+    if (!storedEmail) {
+      showToast({
+        title: "Error",
+        description: "No email found for OTP verification. Please register or login again.",
+        type: "error",
+      });
       navigate("/accounts/login");
+    } else {
+      setUserEmail(storedEmail);
     }
-  }, [userEmail, navigate]);
+  }, [navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOtp(e.target.value);
   };
 
+  // ✅ Call backend to resend OTP
   const handleResendOtp = async () => {
+    if (!userEmail) return;
+
     setLoading(true);
-    if (!userEmail) {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}auth/resend-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userEmail }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        showToast({
+          type: "success",
+          title: "OTP Resent",
+          description: "A new OTP has been sent to your email.",
+        });
+      } else {
+        showToast({
+          type: "error",
+          title: "Resend Failed",
+          description: data.message || "Unable to resend OTP. Please try again.",
+        });
+      }
+    } catch (error) {
+      console.error("Resend OTP error:", error);
       showToast({
         type: "error",
-        title: "Resend OTP Failed",
-        description: "No email available to resend OTP.",
+        title: "Error",
+        description: "Something went wrong while resending OTP.",
       });
+    } finally {
       setLoading(false);
-      return;
     }
-    showToast({ title: "OTP Resent", description: "A new OTP has been sent to your email.", type: "info" });
   };
 
+  // ✅ Verify OTP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userEmail) return;
+
     setLoading(true);
-
-    if (!userEmail) {
-      showToast({
-        type: "error",
-        title: "Verification Error",
-        description: "User email not found for verification.",
-      });
-      setLoading(false);
-      return;
-    }
-
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}verify-otp/`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}auth/verify-otp/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: userEmail, otp }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.removeItem("unverifiedUserEmail"); // Clear stored email on successful verification
+        localStorage.removeItem("unverifiedUserEmail"); // Clear stored email
         showToast({
           type: "success",
           title: "Account Verified",
-          description: "Account verified successfully! You can now log in.",
+          description: "Your account has been verified. Please login.",
         });
         navigate("/accounts/login");
       } else {
-        const errorMessage = data.detail || "OTP verification failed. Please try again.";
         showToast({
           type: "error",
           title: "Verification Failed",
-          description: errorMessage,
+          description: data.message || "OTP verification failed. Please try again.",
         });
       }
     } catch (error) {
-      console.error("Error during OTP verification:", error);
+      console.error("Verify OTP error:", error);
       showToast({
         type: "error",
         title: "Error",
@@ -91,13 +112,18 @@ const VerifyOTP = () => {
   };
 
   if (!userEmail) {
-    return null; // Or a loading spinner, or redirecting UI
+    return null; // show nothing while checking storage
   }
 
   return (
     <div className="flex flex-col items-center justify-center p-4 w-full max-w-md mx-auto">
       <h1 className="text-4xl font-bold mb-4 text-center">Verify Your Account</h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-8 text-center">An OTP has been sent to <span className="font-semibold text-primary">{userEmail}</span>. Please enter it below to verify your account.</p>
+      <p className="text-gray-600 dark:text-gray-400 mb-8 text-center">
+        An OTP has been sent to{" "}
+        <span className="font-semibold text-primary">{userEmail}</span>.  
+        Please enter it below to verify your account.
+      </p>
+
       <form onSubmit={handleSubmit} className="space-y-6 w-full">
         <div className="space-y-2">
           <Label htmlFor="otp" className="text-base">OTP Code</Label>
@@ -117,12 +143,20 @@ const VerifyOTP = () => {
           {loading ? "Verifying..." : "Verify Account"}
         </Button>
       </form>
+
       <p className="text-sm text-gray-500 mt-8">
         Didn't receive the OTP?{" "}
-        <Button variant="link" className="p-0 h-auto text-primary hover:underline" onClick={handleResendOtp} disabled={loading}>Resend OTP</Button>
+        <Button
+          variant="link"
+          className="p-0 h-auto text-primary hover:underline"
+          onClick={handleResendOtp}
+          disabled={loading}
+        >
+          Resend OTP
+        </Button>
       </p>
     </div>
   );
 };
 
-export default VerifyOTP; 
+export default VerifyOTP;

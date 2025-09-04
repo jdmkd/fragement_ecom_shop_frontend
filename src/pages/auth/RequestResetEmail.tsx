@@ -18,7 +18,7 @@ const RequestResetEmail = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}request-reset-email/`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}auth/request-reset-email/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

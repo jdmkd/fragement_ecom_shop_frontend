@@ -28,6 +28,7 @@ import MyProfile from "./pages/MyProfile";
 
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ReactNode } from "react";
+import SubcategoryPage from "./pages/Subcategory";
 
 const OrderHistory = () => <div>Order History Page</div>;
 
@@ -67,12 +68,16 @@ const App = () => (
             <Route path="/belts" element={<Layout><Belts /></Layout>} />
             <Route path="/perfumes" element={<Layout><Perfumes /></Layout>} />
             <Route path="/shop" element={<Layout><Shop /></Layout>} />
+            <Route path="/shop/subcategory/:slug" element={<SubcategoryPage />} />
+            
             <Route path="/product/:id" element={<Layout><ProductDetail /></Layout>} />
             <Route path="/about" element={<Layout><About /></Layout>} />
             <Route path="/contact" element={<Layout><Contact /></Layout>} />
             <Route path="/faq" element={<Layout><FAQ /></Layout>} />
             <Route path="/shipping" element={<Layout><Shipping /></Layout>} />
             <Route path="/track-order" element={<Layout><TrackOrder /></Layout>} />
+
+
 
             <Route path="/accounts/register" element={<PublicOnlyRoute><AuthLayout><Register /></AuthLayout></PublicOnlyRoute>} />
             <Route path="/accounts/login" element={<PublicOnlyRoute><AuthLayout><Login /></AuthLayout></PublicOnlyRoute>} />
